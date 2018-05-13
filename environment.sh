@@ -1,5 +1,5 @@
 # Create an environment:
-#conda create --name template python=3.6
+#conda create --name car6 python=3.6
 
 # Active the environment:
 source activate template
