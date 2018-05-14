@@ -326,6 +326,8 @@ TSWLatexianTemp*
 # expex forward references with \gathertags
 *-tags.tex
 
+## Open office lock files
+.~lock*
 
 
 
