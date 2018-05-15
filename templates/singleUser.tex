@@ -1,0 +1,101 @@
+%----------------------------------------------------------------------------------------
+%	DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+\documentclass[%DIN,
+    %pagenumber=footmiddle,
+    parskip=half,
+    fromalign=right,  % Align sender to the right
+    fromphone=false, fromfax=false,
+    fromrule=false]{scrlttr2}
+
+\usepackage[ngerman]{babel}% <- use this instead package ngerman
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+%\usepackage{stix} % Use the Stix font by default
+\usepackage{eurosym}
+\usepackage{hhline}
+\usepackage{graphicx}
+\usepackage{lastpage}
+\usepackage{booktabs}
+\usepackage{longtable}
+
+\setkomafont{pagehead}{\normalfont\normalcolor}
+
+\renewcommand*{\raggedsignature}{\raggedright} % Stop the signature from indenting
+
+%----------------------------------------------------------------------------------------
+
+\setkomavar{fromname}{Car Sharing Aurich e.V.\\ Heinrich Herlyn}
+%\setkomavar{fromphone}{+49 (0) 123 / 456 78-9}
+\setkomavar{fromaddress}{An der Dahlhoffsburg 14\\ 26605 Aurich}
+\setkomavar{signature}{\includegraphics[height=2cm]{##pathSignature}\\Alexandra Seregely} % Your name used in the signature
+\setkomavar{frombank}{Raiffeisen Volksbank eG\\ BLZ: 285 622 97 \\ Konto: 444 101 000}
+
+\setkomavar{firstfoot}{%<- changed
+    \parbox[t]{\textwidth}{\footnotesize 
+\begingroup \raggedleft
+Seite \thepage{} von \pageref{LastPage}\\
+\endgroup
+    \begin{tabular}[t]{l@{}}
+         \multicolumn{1}{@{}l@{}}{Verein:}\\ 
+         Car Sharing Aurich e.V.
+    \end{tabular}
+     \hfill{}
+     \begin{tabular}[t]{l@{}}
+         \multicolumn{1}{@{}l@{}}{Rechtliche Informationen:}\\ 
+        Amtsgericht Aurich\\
+        Registerblatt VR 681\\
+     \end{tabular}
+     \hfill{}
+     \begin{tabular}[t]{l@{}}
+         \multicolumn{1}{@{}l@{}}{\usekomavar*{frombank}:}\\ 
+         \usekomavar{frombank} 
+     \end{tabular} 
+ }}
+
+\pagestyle{headings}
+\setkomavar{nexthead}{%
+    \parbox[t]{\textwidth}{%\footnotesize
+        \begingroup \raggedright
+            Auflistung der Fahrten von ##firstName ##lastName
+        \endgroup
+    }
+}
+
+%\setkomavar{nextfoot}{\usekomavar{firstfoot}}
+\setkomavar{nextfoot}{%
+    \parbox[t]{\textwidth}{\footnotesize 
+        \begingroup \raggedleft
+            Seite \thepage{} von \pageref{LastPage}\\
+        \endgroup
+    }
+}
+\makeatletter
+\@addtoplength[-]{firstfootvpos}{\footskip}
+\makeatother
+%===================================
+
+\setkomavar{subject}{\bf{Monatsabrechnung ##month ##year}}
+%\setkomavar{yourmail}[Ihre Angebots-Nr.]{2010122621}
+%\setkomavar{yourref}[Ihre Kundennummer]{262}
+\setkomavar{date}[]{ ##settlementDate }
+
+\begin{document}
+
+\begin{letter}{ ##firstName ##lastName \\ ##street ##streetNumber\\ ##postCode ##city } 
+
+\opening{Moin,}
+
+im Monat ##month ##year haben Sie im Car Sharing Aurich e.V. die nachfolgend aufgeführten Fahrten zurückgelegt.
+
+Dabei ist der nachfolgend aufgeführte Aufwand entstanden, welcher von Ihrem Konto eingezogen wird.
+
+\closing{Mit freundlichen Grüßen}
+
+%\setkomavar*{enclseparator}{Anlage} 
+%\encl{Fahrtenauflistung}
+
+##table
+
+\end{letter}
+\end{document}
