@@ -128,6 +128,19 @@ def getTemplate(pathTemplate):
         template = LatexTemplate(myFile.read())
     return template
 
+def renameDataFrameIndexNames(dataFrame, dictionary):
+    """Rename index names of data frame object inplace"""
+    length = len(dataFrame.index.names)
+    if length == 1:
+         dataFrame.index.rename(
+            dictionary[dataFrame.index.name],
+            inplace = True) 
+    else:
+         dataFrame.index.rename(
+            [dictionary[name] for name in dataFrame.index.names],
+            inplace = True)
+    return dataFrame
+
 if __name__ == '__main__':
 
     year = 2001
@@ -236,8 +249,10 @@ if __name__ == '__main__':
 
     ##################
     # Calc total price for each driver
-
-    totalPrice = logbookF.groupby(['driver'])['price'].sum()
+    grouped = logbookF.groupby(['driver'])
+    totalDuration   = grouped['duration'].sum()
+    totalDistance   = grouped['distance'].sum()
+    totalPrice      = grouped['price'].sum()
 
     ##################
     # Create list of active drivers
@@ -261,24 +276,34 @@ if __name__ == '__main__':
                                ['start',
                                 'end',
                                 'duration',
-                                'distance']]
-    summation = overview
+                                'distance',
+                                'price']]
+    summation = pd.DataFrame(
+            [   totalDistance, 
+                totalDuration,
+                totalPrice]).T
 
     ##################
     # Rename overview latex tables
 
     overviewRenamed = overview.rename(columns = dictionary)
-    overviewRenamed.index.rename(
-            [dictionary[name] for name in overview.index.names],
-            inplace = True)
-    summationRenamed = summation
+    overviewRenamed = renameDataFrameIndexNames(
+            overviewRenamed, dictionary)
+    
+    dictionarySummation = {
+            key: dictionary['total']+' '+value 
+            for key,value in dictionary.items()}
+    summationRenamed = summation.rename(columns = dictionarySummation)
+    summationRenamed = renameDataFrameIndexNames(
+            summationRenamed, dictionarySummation)
+
 
     ##################
     # Wrap tables in dict
 
     overviewDict = {}
     overviewDict['overviewTable']   = overviewRenamed.to_latex()
-    overviewDict['summationTable']  = 'TestString'
+    overviewDict['summationTable']  = summationRenamed.to_latex()
 
     ##################
     # Create output directory
