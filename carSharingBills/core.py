@@ -83,7 +83,8 @@ class cd:
     def __exit__(self, etype, value, traceback):
         os.chdir(self.savedPath)
 
-def createPdf(dirOutput, nameLatexFile, template, latexDict, unnecessaryFileEndings ):
+def createPdf(dirOutput, nameLatexFile, template, latexDict, 
+        unnecessaryFileEndings ):
 
     pathLatexFile = os.path.join(dirOutput, nameLatexFile)
     with open( pathLatexFile, 'w' ,newline = '\n') as latexFile:
@@ -116,7 +117,9 @@ def monthGerman(integerMonth):
         month = gerMonthsNamesList[integerMonth-1]
     else:
         raise ValueError(
-                'Integer specifying month has to be in [1,12]')
+                'Integer specifying month has to be in [1,12]'\
+                        '\n can\' process integer {}'.format(
+                            str(integerMonth)))
     return month
 
 def getTemplate(pathTemplate):
