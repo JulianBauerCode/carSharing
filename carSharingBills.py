@@ -7,6 +7,8 @@ import string
 import subprocess
 import locale
 
+
+
 def calculatePriceOfSingleRide(distance, duration):
     """Calculate the price of one single ride
     
@@ -68,67 +70,11 @@ def calculatePriceOfSingleRide(distance, duration):
 
     return price
 
-import math
-def calculatePriceOfSingleRide2(distance, duration,
-        rates = (0.5, 0.28, 0.23),              #[Euro / km]
-        ratesStarts = (0, 50, 100),             #[km]
-        highDurationsPrices = (0,25),           #[Euro]
-        highDurationsStarts = (-math.inf,24),   #[h]
-        minPrice = 0):                          #[Euro]
-    """Calculate the price of one single ride based on parameter lists
-    
-    Parameters
-    ----------
-    distance : float
-        Distance of the ride in kilometer
-    duration : float
-        Duration of the ride in hours
-    rates : [floats]
-        Rates specifying cost per distance starting from corresponding
-        value of ratesStarts
-    ratesStarts : [floats]
-        Starting from this distances, the corresponding rates from rates
-        is applied
-    highDurationPrices : [floats]
-        Minimum prices starting from corresponding value of 
-        highDurationsStarts
-    highDurationsStarts : [floats]
-        Starting from this distances, the corresponding prices from 
-        highDurationPrices is applied
-    minPrice : float
-        Minimum price
-
-    Returns
-    -------
-    Float
-        The price in Euro
-    
-    Raises
-    ------
-    None
-    """
-    import bisect
-
-    # Calc temporary price based on distance
-    indexDistance = bisect.bisect_left(ratesStarts, distance)
-    price = minPrice
-    for rateIndex in range(indexDistance - 1):
-        price = price + rates[rateIndex]\
-                * (ratesStarts[rateIndex + 1] - ratesStarts[rateIndex])
-    price = price + rates[indexDistance- 1]\
-                * (distance - ratesStarts[indexDistance - 1])
-    
-    # Calc minimum price based on duration
-    minPriceDueToDuration = highDurationsPrices[
-            bisect.bisect_right(
-                highDurationsStarts, duration)-1]
-    # Define minimum price based on duration
-    return max(minPriceDueToDuration, price )
-
 def plotPriceFunction( dictionary,
-                       function = calculatePriceOfSingleRide2,
+                       function = calculatePriceOfSingleRide,
                        rangeDistance = [0,120],
-                       rangeDuration = [0,50]):
+                       rangeDuration = [0,50], 
+                       ylim = [0,45]):
     import numpy as np
     # %matplotlib auto
     # import matplotlib
@@ -140,7 +86,7 @@ def plotPriceFunction( dictionary,
     for plotNumber,duration in enumerate([2,24,30]):
         ax.set_title('Variable distance, different durations')
         x = np.arange(*rangeDistance)
-        y = list(map(lambda x: calculatePriceOfSingleRide2(
+        y = list(map(lambda x: function(
             distance = x,
             duration = duration),x))
         ax.plot(x,y, 
@@ -150,7 +96,7 @@ def plotPriceFunction( dictionary,
     ax.grid(True)
     ax.set_xlabel('distance')
     ax.set_ylabel('price')
-    ax.set_ylim([0,40])
+    ax.set_ylim(*ylim)
     plt.legend()
     plt.show()
 
@@ -192,7 +138,7 @@ def createPdf(dirOutput, nameLatexFile, template, latexDict,
             # Start process
             proc = subprocess.Popen(cmd)
             # Wait till process is finished
-            out = proc.communicate()
+            tmp = proc.communicate()
         for ending in unnecessaryFileEndings:
             try:
                 os.unlink(os.path.splitext(pathLatexFile)[0]
@@ -330,6 +276,7 @@ if __name__ == '__main__':
 
     # Define start of month
     start = datetime.datetime(year = year, month = month, day = 1)
+    
     # Define end of month
     end = start + dateutil.relativedelta.relativedelta(
             months          = +1,
@@ -467,6 +414,9 @@ if __name__ == '__main__':
                     latexDict = driverDicts[driver],
                     unnecessaryFileEndings = unnecessaryFileEndings)
 
+    ##################
+    # Plot price function
+    
     plotPriceFunction(dictionary = dictionary)
 
 
