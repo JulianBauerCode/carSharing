@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import sys
 import datetime
 import dateutil
 import string
@@ -21,15 +22,21 @@ def calculatePriceOfSingleRide(distance, duration):
     up to \"maxDistanceForRate2\".
     rate3 applies to all kilometers up from \"maxDistanceForRate2\".
 
-    Args:
-        distance: Distance of the ride in kilometer
-        duration: Duration of the ride in hours
+    Parameters
+    ----------
+    distance : float
+        Distance of the ride in kilometer
+    duration : float
+        Duration of the ride in hours
 
-    Returns:
-        Float representing the price in Euro
+    Returns
+    -------
+    Float 
+        The price in Euro
     
-    Raises:
-        None
+    Raises
+    ------
+    None
     
     """
 
@@ -60,6 +67,92 @@ def calculatePriceOfSingleRide(distance, duration):
         price = tmpPrice
 
     return price
+
+import math
+def calculatePriceOfSingleRide2(distance, duration,
+        rates = (0.5, 0.28, 0.23),              #[Euro / km]
+        ratesStarts = (0, 50, 100),             #[km]
+        highDurationsPrices = (0,25),           #[Euro]
+        highDurationsStarts = (-math.inf,24),   #[h]
+        minPrice = 0):                          #[Euro]
+    """Calculate the price of one single ride based on parameter lists
+    
+    Parameters
+    ----------
+    distance : float
+        Distance of the ride in kilometer
+    duration : float
+        Duration of the ride in hours
+    rates : [floats]
+        Rates specifying cost per distance starting from corresponding
+        value of ratesStarts
+    ratesStarts : [floats]
+        Starting from this distances, the corresponding rates from rates
+        is applied
+    highDurationPrices : [floats]
+        Minimum prices starting from corresponding value of 
+        highDurationsStarts
+    highDurationsStarts : [floats]
+        Starting from this distances, the corresponding prices from 
+        highDurationPrices is applied
+    minPrice : float
+        Minimum price
+
+    Returns
+    -------
+    Float
+        The price in Euro
+    
+    Raises
+    ------
+    None
+    """
+    import bisect
+
+    # Calc temporary price based on distance
+    indexDistance = bisect.bisect_left(ratesStarts, distance)
+    price = minPrice
+    for rateIndex in range(indexDistance - 1):
+        price = price + rates[rateIndex]\
+                * (ratesStarts[rateIndex + 1] - ratesStarts[rateIndex])
+    price = price + rates[indexDistance- 1]\
+                * (distance - ratesStarts[indexDistance - 1])
+    
+    # Calc minimum price based on duration
+    minPriceDueToDuration = highDurationsPrices[
+            bisect.bisect_right(
+                highDurationsStarts, duration)-1]
+    # Define minimum price based on duration
+    return max(minPriceDueToDuration, price )
+
+def plotPriceFunction( dictionary,
+                       function = calculatePriceOfSingleRide2,
+                       rangeDistance = [0,120],
+                       rangeDuration = [0,50]):
+    import numpy as np
+    # %matplotlib auto
+    # import matplotlib
+    # matplotlib.rcParams.update({'font.size': 22})
+    import matplotlib.pyplot as plt
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    
+    for plotNumber,duration in enumerate([2,24,30]):
+        ax.set_title('Variable distance, different durations')
+        x = np.arange(*rangeDistance)
+        y = list(map(lambda x: calculatePriceOfSingleRide2(
+            distance = x,
+            duration = duration),x))
+        ax.plot(x,y, 
+                label = 'Duration = {}'.format(duration),
+                linewidth=12 - 4 * plotNumber)
+    
+    ax.grid(True)
+    ax.set_xlabel('distance')
+    ax.set_ylabel('price')
+    ax.set_ylim([0,40])
+    plt.legend()
+    plt.show()
 
 class DriverUnknown(Exception):
     """Driver is unknown, i.e. driver is not in table of drivers"""
@@ -374,8 +467,7 @@ if __name__ == '__main__':
                     latexDict = driverDicts[driver],
                     unnecessaryFileEndings = unnecessaryFileEndings)
 
-
-
+    plotPriceFunction(dictionary = dictionary)
 
 
 
