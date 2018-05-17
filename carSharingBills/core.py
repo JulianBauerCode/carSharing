@@ -70,7 +70,7 @@ class UnSupportedOperatingSystem(Exception):
     pass
 
 class LatexTemplate(string.Template):
-    """String template with specifal delimiter"""    
+    """String template with special delimiter"""
     delimiter = "##"
 
 class cd:
@@ -249,6 +249,7 @@ if __name__ == '__main__':
 
     ##################
     # Calc total price for each driver
+
     grouped = logbookF.groupby(['driver'])
     totalDuration   = grouped['duration'].sum()
     totalDistance   = grouped['distance'].sum()
@@ -349,6 +350,7 @@ if __name__ == '__main__':
         driverDict['month'] = monthGerman(month) 
         driverDict['year']  = str(year)
         driverDict['table'] = overviewRenamed.loc[driver,:].to_latex()
+        driverDict['totalPrice'] = str(totalPrice[driver]) + ' Euro'
         driverDict['pathSignature'] = os.path.relpath(
                 path = os.path.join(pathMain, 'templates','signature'),
                 start = dirOutput)
