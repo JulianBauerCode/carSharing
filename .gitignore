@@ -1,6 +1,9 @@
 # Specific directories
 /output/
 
+# Cache of pytest
+.pytest_cache/
+
 # Swap files of vim
 *.py.swp
 
