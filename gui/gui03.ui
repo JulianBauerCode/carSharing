@@ -304,13 +304,13 @@
      <height>25</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menuHelp">
+   <widget class="QMenu" name="menuDoc">
     <property name="title">
      <string>Menu</string>
     </property>
-    <addaction name="actionHelp"/>
+    <addaction name="actionDoc"/>
    </widget>
-   <addaction name="menuHelp"/>
+   <addaction name="menuDoc"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
@@ -346,12 +346,32 @@
     <bool>false</bool>
    </attribute>
   </widget>
-  <action name="actionHelp">
+  <action name="actionDoc">
    <property name="text">
-    <string>Help</string>
+    <string>Show Documentation</string>
    </property>
   </action>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>table_select_button</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>tableSelectFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>174</x>
+     <y>101</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>252</x>
+     <y>38</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>tableSelectFile()</slot>
+ </slots>
 </ui>
