@@ -156,7 +156,7 @@ def createPdf(dirOutput, nameLatexFile, template, latexDict,
         # Execute Latex two times to get total number of pages
         for i in range(2):
             # Start process
-            proc = subprocess.Popen(cmd)
+            proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL)
             # Wait till process is finished
             proc.communicate()
         for ending in unnecessaryFileEndings:
