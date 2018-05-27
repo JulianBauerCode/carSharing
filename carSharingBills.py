@@ -15,11 +15,32 @@ import subprocess
 import locale
 
 
-class BillManager():
-    """Processes one single month"""
-    def __init__(self, year, month, autoDate=True, dateOfBill=None):
-        pass
+class DriverUnknown(Exception):
+    """Driver is unknown, i.e. driver is not in table of drivers"""
     pass
+
+
+class UnSupportedOperatingSystem(Exception):
+    """Operating system is not supported"""
+    pass
+
+
+class LatexTemplate(string.Template):
+    """String template with special delimiter"""
+    delimiter = "##"
+
+
+class cd:
+    """Context manager for changing the current working directory"""
+    def __init__(self, newPath):
+        self.newPath = os.path.expanduser(newPath)
+
+    def __enter__(self):
+        self.savedPath = os.getcwd()
+        os.chdir(self.newPath)
+
+    def __exit__(self, etype, value, traceback):
+        os.chdir(self.savedPath)
 
 
 def calculatePriceOfSingleRide(distance, duration):
@@ -83,360 +104,362 @@ def calculatePriceOfSingleRide(distance, duration):
     return price
 
 
-def plotPriceFunction(dictionary,
-                      function=calculatePriceOfSingleRide,
-                      rangeDistance=[0, 120],
-                      rangeDuration=[0, 50],
-                      ylim=[0, 45]):
-    import numpy as np
-    # %matplotlib auto
-    # import matplotlib
-    # matplotlib.rcParams.update({'font.size': 22})
-    import matplotlib.pyplot as plt
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
+class BillManager():
+    """Processes one single month"""
+    def __init__(self, year, month, pathLogbook, pathTableOfDrivers,
+                 pathDictionary,
+                 dirOutput,
+                 priceOfSingleRide=calculatePriceOfSingleRide,
+                 autoDate=True, dateOfBill=None):
+        self.year = year
+        self.month = month
+        self.dateOfBill = self.getBillDateGerman(autoDate=autoDate,
+                                                 dateOfBill=dateOfBill)
+        self.pathLogbook = pathLogbook
+        self.pathTableOfDrivers = pathTableOfDrivers
+        self.pathDictionary = pathDictionary
+        self.priceOfSingleRide = priceOfSingleRide
+        self.dirOutput = dirOutput
+        self.pathMain = os.path.dirname(os.path.abspath('__file__'))
 
-    for plotNumber, duration in enumerate([2, 24, 30]):
-        ax.set_title('Variable distance, different durations')
-        x = np.arange(*rangeDistance)
-        y = list(map(lambda x: function(
-            distance=x,
-            duration=duration), x))
-        ax.plot(x, y,
-                label='Duration = {}'.format(duration),
-                linewidth=12 - 4 * plotNumber)
+    def createBills(self):
 
-    ax.grid(True)
-    ax.set_xlabel('distance')
-    ax.set_ylabel('price')
-    ax.set_ylim(*ylim)
-    plt.legend()
-    plt.show()
+        # Read logbook
+        self.logbook = pd.read_excel(io=self.pathLogbook)
 
+        # Read table of drivers and set index
+        self.tableOfDrivers = pd.read_excel(io=self.pathTableOfDrivers)\
+            .set_index('driver')
 
-class DriverUnknown(Exception):
-    """Driver is unknown, i.e. driver is not in table of drivers"""
-    pass
+        # Read dictionary and convert into python-dict
+        self.dictionary = pd.read_excel(
+                io=self.pathDictionary,
+                header=None,
+                skiprows=1)
+        self.dictionary = self.dictionary.set_index(0).to_dict()[1]
 
+        ##################
+        # Combine pairs of date and time to datetime objects
+        # https://stackoverflow.com/a/39474812/8935243
 
-class UnSupportedOperatingSystem(Exception):
-    """Operating system is not supported"""
-    pass
+        self.logbook['start'] = self.logbook.apply(
+                            func=lambda row:
+                            pd.datetime.combine(
+                                row['dateStart'],
+                                row['timeStart']),
+                            axis=1)
 
+        self.logbook['end'] = self.logbook.apply(
+                            func=lambda row:
+                            pd.datetime.combine(
+                                row['dateEnd'],
+                                row['timeEnd']),
+                            axis=1)
 
-class LatexTemplate(string.Template):
-    """String template with special delimiter"""
-    delimiter = "##"
+        ##################
+        # Filter data for time range
 
+        # Define start of month
+        self.start = datetime.datetime(year=self.year,
+                                          month=self.month,
+                                          day=1)
 
-class cd:
-    """Context manager for changing the current working directory"""
-    def __init__(self, newPath):
-        self.newPath = os.path.expanduser(newPath)
+        # Define end of month
+        self.end = self.start + dateutil.relativedelta.relativedelta(
+                                                    months=+1,
+                                                    microseconds=-1)
 
-    def __enter__(self):
-        self.savedPath = os.getcwd()
-        os.chdir(self.newPath)
+        # Filter and set index
+        self.logbookF = self.logbook.set_index('start')
+        self.logbookF.sort_index(inplace=True)
+        self.logbookF = self.logbookF.loc[self.start:self.end]\
+            .reset_index()
 
-    def __exit__(self, etype, value, traceback):
-        os.chdir(self.savedPath)
+        ##################
+        # Calc duration
 
+        self.logbookF['duration'] = self.logbookF.apply(
+                                func=lambda row:
+                                ((row['end']-row['start'])
+                                    .total_seconds())/(60*60),
+                                # unit = hours
+                                axis=1)
 
-def createPdf(dirOutput, nameLatexFile, template, latexDict,
-              unnecessaryFileEndings):
+        ##################
+        # Calc price
 
-    pathLatexFile = os.path.join(dirOutput, nameLatexFile)
-    with open(pathLatexFile, 'w', newline='\n') as latexFile:
-        latexFile.write(template.substitute(**latexDict))
-    with cd(dirOutput):
-        cmd = ['pdflatex',
-               '-interaction',
-               'nonstopmode',
-               pathLatexFile]
-        # Execute Latex two times to get total number of pages
-        for i in range(2):
-            # Start process
-            proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL)
-            # Wait till process is finished
-            proc.communicate()
-        for ending in unnecessaryFileEndings:
-            try:
-                os.unlink(os.path.splitext(pathLatexFile)[0]
-                          + ending)
-            except(FileNotFoundError):
-                pass
-    return None
+        self.logbookF['price'] = self.logbookF.apply(
+                            func=lambda row:
+                            self.priceOfSingleRide(
+                                distance=row['distance'],
+                                duration=row['duration']),
+                            axis=1)
 
+        ##################
+        # Calc total price for each driver
 
-def monthGerman(integerMonth):
-    """Return German name of month"""
-    gerMonthsNamesList = ['Januar', 'Februar', 'März', 'April',
-                          'Mai', 'Juni', 'Juli', 'August', 'September',
-                          'Oktober', 'November', 'Dezember']
-    if (1 <= integerMonth) & (integerMonth <= 12):
-        month = gerMonthsNamesList[integerMonth-1]
-    else:
-        raise ValueError(
-                'Integer specifying month has to be in [1,12].'
-                '\n Can\'t process integer {}'.format(str(integerMonth)))
-    return month
+        self.grouped = self.logbookF.groupby(['driver'])
+        self.totalDuration = self.grouped['duration'].sum()
+        self.totalDistance = self.grouped['distance'].sum()
+        self.totalPrice = self.grouped['price'].sum()
 
+        ##################
+        # Create list of active drivers
 
-def getTemplate(pathTemplate):
-    """Get latex template"""
-    with open(pathTemplate, 'r', newline='') as myFile:
-        template = LatexTemplate(myFile.read())
-    return template
+        self.activeDrivers = self.totalPrice.index.tolist()
 
+        ##################
+        # Check if all active driver are in table of drivers
 
-def renameDataFrameIndexNames(dataFrame, dictionary):
-    """Rename index names of data frame object inplace"""
-    length = len(dataFrame.index.names)
-    if length == 1:
-        dataFrame.index.rename(
-            dictionary[dataFrame.index.name],
-            inplace=True)
-    else:
-        dataFrame.index.rename(
-            [dictionary[name] for name in dataFrame.index.names],
-            inplace=True)
-    return dataFrame
+        for driver in self.activeDrivers:
+            if driver not in self.tableOfDrivers.index:
+                raise DriverUnknown(
+                    'Driver \"{}\"'.format(driver)
+                    + 'is not found in table of drivers:\n'
+                    + '{}'.format(self.tableOfDrivers))
 
+        ##################
+        # Create overview latex tables
 
-if __name__ == '__main__':
+        self.overview = self.logbookF.set_index(['driver', 'car'])[[
+                                    'start',
+                                    'end',
+                                    'duration',
+                                    'distance',
+                                    'price']]
+        self.summation = pd.DataFrame([
+                        self.totalDistance,
+                        self.totalDuration,
+                        self.totalPrice]).T
 
-    year = 2001
-    month = 1
-    automaticDate = True
+        ##################
+        # Change format of datetimes
+        self.format = '%Y-%m-%d %H:%M'
+        for label in ['start', 'end']:
+            self.overview[label] = self.overview[label].dt.strftime(
+                self.format)
 
-    ##################
-    # Define settlement date
+        ##################
+        # Rename overview latex tables
 
-    if automaticDate:
-        if os.name == 'posix':  # We are on Linux
-            locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
-            settlementDate = datetime.datetime.now().strftime(
-                    "%-d. %B %Y")
-        elif os.name == 'nt':  # We are on Windows
-            locale.setlocale(locale.LC_ALL, 'deu_deu')
-            settlementDate = datetime.now().strftime("%#d. %B %Y")
+        self.overviewR = self.overview.rename(columns=self.dictionary)
+        self.overviewR = self.renameDataFrameIndexNames(
+                self.overviewR, self.dictionary)
+
+        self.dictionarySummation = {
+                key: self.dictionary['total']+' '+value
+                for key, value in self.dictionary.items()}
+        self.summationR = self.summation.rename(
+                columns=self.dictionarySummation)
+        self.summationR = self.renameDataFrameIndexNames(
+                self.summationR, self.dictionarySummation)
+
+        ##################
+        # Wrap tables in dict
+
+        self.overviewDict = {}
+        self.overviewDict['overviewTable'] =\
+            self.overviewR.to_latex()
+        self.overviewDict['summationTable'] =\
+            self.summationR.to_latex()
+
+        ##################
+        # Create output directory
+
+        if not os.path.exists(self.dirOutput):
+            os.makedirs(self.dirOutput)
+
+        ##################
+        # Define unnecessary file endings which will be deleted
+
+        self.unnecessaryFileEndings = ['.aux', '.log']
+
+        ##################
+        # Process overview
+
+        # Define name
+        self.nameLatexFile = '{y}_{m}_{name}.tex'.format(
+                    y=str(self.year),
+                    m=str(self.month).zfill(2),
+                    name='overview')
+
+        # Excute
+        self.createPdf(dirOutput=self.dirOutput,
+                       nameLatexFile=self.nameLatexFile,
+                       template=self.getTemplate(
+                                       pathTemplate=os.path.join(
+                                               self.pathMain,
+                                               'templates',
+                                               'overview.tex')),
+                       latexDict=self.overviewDict,
+                       unnecessaryFileEndings=
+                           self.unnecessaryFileEndings)
+
+        ##################
+        # Process drivers
+
+        keys = ['firstName', 'lastName', 'street', 'streetNumber',
+                'postCode', 'city']
+
+        self.driverDicts = {}
+        for driver in self.activeDrivers:
+            driverDict = {}
+            driverDict['dateOfBill'] = self.dateOfBill
+            driverDict['month'] = self.monthGerman(self.month)
+            driverDict['year'] = str(self.year)
+            driverDict['table'] = self.overviewR.loc[driver, :]\
+                .to_latex()
+            driverDict['totalPrice'] = str(self.totalPrice[driver])\
+                + ' Euro'
+            driverDict['pathSignature'] = os.path.relpath(
+                    path=os.path.join(pathMain, 'templates', 'signature'),
+                    start=dirOutput)
+            for key in keys:
+                driverDict[key] = self.tableOfDrivers.loc[driver][key]
+            # Add current dict to dict of dicts
+            self.driverDicts[driver] = driverDict
+
+        # Excute
+        for driver in self.activeDrivers:
+            self.createPdf(dirOutput=self.dirOutput,
+                           nameLatexFile='{y}_{m}_{driver}.tex'.format(
+                                  y=str(self.year),
+                                  m=str(self.month).zfill(2),
+                                  driver=driver),
+                           template=self.getTemplate(
+                                pathTemplate=os.path.join(
+                                    self.pathMain,
+                                    'templates',
+                                    'singleUser.tex')),
+                           latexDict=self.driverDicts[driver],
+                           unnecessaryFileEndings=
+                              self.unnecessaryFileEndings)
+
+    def getBillDateGerman(self, autoDate, dateOfBill):
+        if autoDate:
+            if os.name == 'posix':  # We are on Linux
+                locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
+                dateOfBill = datetime.datetime.now().strftime(
+                        "%-d. %B %Y")
+            elif os.name == 'nt':  # We are on Windows
+                locale.setlocale(locale.LC_ALL, 'deu_deu')
+                dateOfBill = datetime.now().strftime("%#d. %B %Y")
+            else:
+                raise UnSupportedOperatingSystem(
+                        'The operating system is neither \'posix = Linux\''
+                        'nor  \'nt = Windows\'.\n'
+                        'The local format of the bills date can\'t be'
+                        'determined automatically.\n Please insert it'
+                        'by Hand')
+        return dateOfBill
+
+        def plotPriceFunction(self, dictionary,
+                              function=calculatePriceOfSingleRide,
+                              rangeDistance=[0, 120],
+                              rangeDuration=[0, 50],
+                              ylim=[0, 45]):
+            import numpy as np
+            # %matplotlib auto
+            # import matplotlib
+            # matplotlib.rcParams.update({'font.size': 22})
+            import matplotlib.pyplot as plt
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+
+            for plotNumber, duration in enumerate([2, 24, 30]):
+                ax.set_title('Variable distance, different durations')
+                x = np.arange(*rangeDistance)
+                y = list(map(lambda x: function(
+                    distance=x,
+                    duration=duration), x))
+                ax.plot(x, y,
+                        label='Duration = {}'.format(duration),
+                        linewidth=12 - 4 * plotNumber)
+
+            ax.grid(True)
+            ax.set_xlabel('distance')
+            ax.set_ylabel('price')
+            ax.set_ylim(*ylim)
+            plt.legend()
+            plt.show()
+
+    def createPdf(self, dirOutput, nameLatexFile, template, latexDict,
+                  unnecessaryFileEndings):
+
+        pathLatexFile = os.path.join(dirOutput, nameLatexFile)
+        with open(pathLatexFile, 'w', newline='\n') as latexFile:
+            latexFile.write(template.substitute(**latexDict))
+        with cd(dirOutput):
+            cmd = ['pdflatex',
+                   '-interaction',
+                   'nonstopmode',
+                   pathLatexFile]
+            # Execute Latex two times to get total number of pages
+            for i in range(2):
+                # Start process
+                proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL)
+                # Wait till process is finished
+                proc.communicate()
+            for ending in unnecessaryFileEndings:
+                try:
+                    os.unlink(os.path.splitext(pathLatexFile)[0]
+                              + ending)
+                except(FileNotFoundError):
+                    pass
+        return None
+
+    def monthGerman(self, integerMonth):
+        """Return German name of month"""
+        gerMonthsNamesList = ['Januar', 'Februar', 'März', 'April',
+                              'Mai', 'Juni', 'Juli', 'August', 'September',
+                              'Oktober', 'November', 'Dezember']
+        if (1 <= integerMonth) & (integerMonth <= 12):
+            month = gerMonthsNamesList[integerMonth-1]
         else:
-            raise UnSupportedOperatingSystem(
-                    'The operating system is neither \'posix = Linux\''
-                    'nor  \'nt = Windows\'.\n'
-                    'The local format of the settlement date can\'t be'
-                    'determined automatically.\n Please insert it'
-                    'by Hand')
+            raise ValueError(
+                    'Integer specifying month has to be in [1,12].'
+                    '\n Can\'t process integer {}'.format(str(integerMonth)))
+        return month
 
-    ##################
-    # Read data
+    def getTemplate(self, pathTemplate):
+        """Get latex template"""
+        with open(pathTemplate, 'r', newline='') as myFile:
+            template = LatexTemplate(myFile.read())
+        return template
 
-    # Define path to main directory
+    def renameDataFrameIndexNames(self, dataFrame, dictionary):
+        """Rename index names of data frame object inplace"""
+        length = len(dataFrame.index.names)
+        if length == 1:
+            dataFrame.index.rename(
+                dictionary[dataFrame.index.name],
+                inplace=True)
+        else:
+            dataFrame.index.rename(
+                [dictionary[name] for name in dataFrame.index.names],
+                inplace=True)
+        return dataFrame
+
+
+if (__name__ == '__main__'):
     pathMain = os.path.dirname(os.path.abspath('__file__'))
-
-    # Read logbook
     pathLogbook = os.path.join(pathMain, 'data', 'logbook.xlsx')
-    logbook = pd.read_excel(io=pathLogbook)
-
-    # Read table of drivers and set index
     pathTableOfDrivers = os.path.join(
             pathMain,
             'data',
             'tableOfDrivers.xlsx')
-    tableOfDrivers = pd.read_excel(io=pathTableOfDrivers)\
-        .set_index('driver')
-
-    # Read dictionary and convert into python-dict
     pathDictionary = os.path.join(
             pathMain,
             'data',
             'dictionary.xlsx')
-    dictionary = pd.read_excel(
-            io=pathDictionary,
-            header=None,
-            skiprows=1)
-    dictionary = dictionary.set_index(0).to_dict()[1]
-
-    ##################
-    # Combine pairs of date and time to datetime objects
-    # https://stackoverflow.com/a/39474812/8935243
-
-    logbook['start'] = logbook.apply(
-                        func=lambda row:
-                        pd.datetime.combine(
-                            row['dateStart'],
-                            row['timeStart']),
-                        axis=1)
-
-    logbook['end'] = logbook.apply(
-                        func=lambda row:
-                        pd.datetime.combine(
-                            row['dateEnd'],
-                            row['timeEnd']),
-                        axis=1)
-
-    ##################
-    # Calc duration
-
-    logbook['duration'] = logbook.apply(
-                            func=lambda row:
-                            ((row['end']-row['start'])
-                                .total_seconds())/(60*60),  # unit = hours
-                            axis=1)
-
-    ##################
-    # Calc price
-
-    logbook['price'] = logbook.apply(
-                        func=lambda row:
-                        calculatePriceOfSingleRide(
-                            distance=row['distance'],
-                            duration=row['duration']),
-                        axis=1)
-
-    ##################
-    # Filter data for time range
-
-    # Define start of month
-    start = datetime.datetime(year=year, month=month, day=1)
-
-    # Define end of month
-    end = start + dateutil.relativedelta.relativedelta(
-                                                months=+1,
-                                                microseconds=-1)
-
-    # Filter and set index
-    logbookF = logbook.set_index('start')
-    logbookF.sort_index(inplace=True)
-    logbookF = logbookF.loc[start:end].reset_index()
-
-    ##################
-    # Calc total price for each driver
-
-    grouped = logbookF.groupby(['driver'])
-    totalDuration = grouped['duration'].sum()
-    totalDistance = grouped['distance'].sum()
-    totalPrice = grouped['price'].sum()
-
-    ##################
-    # Create list of active drivers
-
-    activeDrivers = totalPrice.index.tolist()
-
-    ##################
-    # Check if all active driver are in table of drivers
-
-    for driver in activeDrivers:
-        if driver not in tableOfDrivers.index:
-            raise DriverUnknown(
-                'Driver \"{}\"'.format(driver)
-                + 'is not found in table of drivers:\n'
-                + '{}'.format(tableOfDrivers))
-
-    ##################
-    # Create overview latex tables
-
-    overview = logbookF.set_index(['driver', 'car'])[[
-                                'start',
-                                'end',
-                                'duration',
-                                'distance',
-                                'price']]
-    summation = pd.DataFrame([
-                    totalDistance,
-                    totalDuration,
-                    totalPrice]).T
-
-    ##################
-    # Rename overview latex tables
-
-    overviewRenamed = overview.rename(columns=dictionary)
-    overviewRenamed = renameDataFrameIndexNames(
-            overviewRenamed, dictionary)
-
-    dictionarySummation = {
-            key: dictionary['total']+' '+value
-            for key, value in dictionary.items()}
-    summationRenamed = summation.rename(columns=dictionarySummation)
-    summationRenamed = renameDataFrameIndexNames(
-            summationRenamed, dictionarySummation)
-
-    ##################
-    # Wrap tables in dict
-
-    overviewDict = {}
-    overviewDict['overviewTable'] = overviewRenamed.to_latex()
-    overviewDict['summationTable'] = summationRenamed.to_latex()
-
-    ##################
-    # Create output directory
-
     dirOutput = os.path.join(pathMain, 'output')
-    if not os.path.exists(dirOutput):
-        os.makedirs(dirOutput)
 
-    ##################
-    # Define unnecessary file endings which will be deleted
-
-    unnecessaryFileEndings = ['.aux', '.log']
-
-    ##################
-    # Process overview
-
-    # Define name
-    nameLatexFile = '{y}_{m}_{name}.tex'.format(
-                y=str(year),
-                m=str(month).zfill(2),
-                name='overview')
-
-    # Excute
-    createPdf(dirOutput=dirOutput,
-              nameLatexFile=nameLatexFile,
-              template=getTemplate(pathTemplate=os.path.join(
-                            pathMain,
-                            'templates',
-                            'overview.tex')),
-              latexDict=overviewDict,
-              unnecessaryFileEndings=unnecessaryFileEndings)
-
-    ##################
-    # Process drivers
-
-    keys = ['firstName', 'lastName', 'street', 'streetNumber',
-            'postCode', 'city']
-
-    driverDicts = {}
-    for driver in activeDrivers:
-        driverDict = {}
-        driverDict['settlementDate'] = settlementDate
-        driverDict['month'] = monthGerman(month)
-        driverDict['year'] = str(year)
-        driverDict['table'] = overviewRenamed.loc[driver, :].to_latex()
-        driverDict['totalPrice'] = str(totalPrice[driver]) + ' Euro'
-        driverDict['pathSignature'] = os.path.relpath(
-                path=os.path.join(pathMain, 'templates', 'signature'),
-                start=dirOutput)
-        for key in keys:
-            driverDict[key] = tableOfDrivers.loc[driver][key]
-        # Add current dict to dict of dicts
-        driverDicts[driver] = driverDict
-
-    # Excute
-    for driver in activeDrivers:
-        createPdf(dirOutput=dirOutput,
-                  nameLatexFile='{y}_{m}_{driver}.tex'.format(
-                          y=str(year),
-                          m=str(month).zfill(2),
-                          driver=driver),
-                  template=getTemplate(
-                        pathTemplate=os.path.join(
-                            pathMain,
-                            'templates',
-                            'singleUser.tex')),
-                  latexDict=driverDicts[driver],
-                  unnecessaryFileEndings=unnecessaryFileEndings)
-
-    ##################
-    # Plot price function
-
-    plotPriceFunction(dictionary=dictionary)
+    m = BillManager(year=2001,
+                    month=1,
+                    pathLogbook=pathLogbook,
+                    pathTableOfDrivers=pathTableOfDrivers,
+                    pathDictionary=pathDictionary,
+                    dirOutput=dirOutput,
+                    priceOfSingleRide=calculatePriceOfSingleRide,
+                    autoDate=True, dateOfBill=None)
+    m.createBills()

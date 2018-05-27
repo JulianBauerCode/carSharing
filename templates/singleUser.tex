@@ -78,7 +78,7 @@ Seite \thepage{} von \pageref{LastPage}\\
 \setkomavar{subject}{\bf{Monatsabrechnung ##month ##year}}
 %\setkomavar{yourmail}[Ihre Angebots-Nr.]{2010122621}
 %\setkomavar{yourref}[Ihre Kundennummer]{262}
-\setkomavar{date}[]{ ##settlementDate }
+\setkomavar{date}[]{ ##dateOfBill }
 
 \begin{document}
 
@@ -95,6 +95,9 @@ Dabei ist ein Aufwand von insgesamt ##totalPrice entstanden, welcher von Ihrem K
 %\setkomavar*{enclseparator}{Anlage} 
 %\encl{Fahrtenauflistung}
 
+
+% Reduce font size of table
+\small
 ##table
 
 \end{letter}
