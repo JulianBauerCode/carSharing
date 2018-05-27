@@ -109,7 +109,7 @@ class BillManager():
     def __init__(self, year, month, pathLogbook, pathTableOfDrivers,
                  pathDictionary,
                  dirOutput,
-                 priceOfSingleRide=calculatePriceOfSingleRide,
+                 priceFunction=calculatePriceOfSingleRide,
                  autoDate=True, dateOfBill=None):
         self.year = year
         self.month = month
@@ -118,7 +118,7 @@ class BillManager():
         self.pathLogbook = pathLogbook
         self.pathTableOfDrivers = pathTableOfDrivers
         self.pathDictionary = pathDictionary
-        self.priceOfSingleRide = priceOfSingleRide
+        self.priceFunction = priceFunction
         self.dirOutput = dirOutput
         self.pathMain = os.path.dirname(os.path.abspath('__file__'))
 
@@ -190,7 +190,7 @@ class BillManager():
 
         self.logbookF['price'] = self.logbookF.apply(
                             func=lambda row:
-                            self.priceOfSingleRide(
+                            self.priceFunction(
                                 distance=row['distance'],
                                 duration=row['duration']),
                             axis=1)
@@ -335,6 +335,36 @@ class BillManager():
                            unnecessaryFileEndings=
                               self.unnecessaryFileEndings)
 
+    def plotPriceFunction(self,
+                          function,
+                          rangeDistance=[0, 120],
+                          durations=[23.99, 24, 24.01],
+                          ylim=[0, 45]):
+        import numpy as np
+        # %matplotlib auto
+        # import matplotlib
+        # matplotlib.rcParams.update({'font.size': 22})
+        import matplotlib.pyplot as plt
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+
+        for plotNumber, duration in enumerate(durations):
+            ax.set_title('Variable distance, different durations')
+            x = np.arange(*rangeDistance)
+            y = list(map(lambda x: function(
+                distance=x,
+                duration=duration), x))
+            ax.plot(x, y,
+                    label='Duration = {}'.format(duration),
+                    linewidth=3 + 5*len(durations) - 5 * plotNumber)
+
+        ax.grid(True)
+        ax.set_xlabel('distance')
+        ax.set_ylabel('price')
+        ax.set_ylim(*ylim)
+        plt.legend()
+        plt.show()
+
     def getBillDateGerman(self, autoDate, dateOfBill):
         if autoDate:
             if os.name == 'posix':  # We are on Linux
@@ -352,36 +382,6 @@ class BillManager():
                         'determined automatically.\n Please insert it'
                         'by Hand')
         return dateOfBill
-
-        def plotPriceFunction(self, dictionary,
-                              function=calculatePriceOfSingleRide,
-                              rangeDistance=[0, 120],
-                              rangeDuration=[0, 50],
-                              ylim=[0, 45]):
-            import numpy as np
-            # %matplotlib auto
-            # import matplotlib
-            # matplotlib.rcParams.update({'font.size': 22})
-            import matplotlib.pyplot as plt
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-
-            for plotNumber, duration in enumerate([2, 24, 30]):
-                ax.set_title('Variable distance, different durations')
-                x = np.arange(*rangeDistance)
-                y = list(map(lambda x: function(
-                    distance=x,
-                    duration=duration), x))
-                ax.plot(x, y,
-                        label='Duration = {}'.format(duration),
-                        linewidth=12 - 4 * plotNumber)
-
-            ax.grid(True)
-            ax.set_xlabel('distance')
-            ax.set_ylabel('price')
-            ax.set_ylim(*ylim)
-            plt.legend()
-            plt.show()
 
     def createPdf(self, dirOutput, nameLatexFile, template, latexDict,
                   unnecessaryFileEndings):
@@ -460,6 +460,8 @@ if (__name__ == '__main__'):
                     pathTableOfDrivers=pathTableOfDrivers,
                     pathDictionary=pathDictionary,
                     dirOutput=dirOutput,
-                    priceOfSingleRide=calculatePriceOfSingleRide,
+                    priceFunction=calculatePriceOfSingleRide,
                     autoDate=True, dateOfBill=None)
     m.createBills()
+
+    m.plotPriceFunction(function=m.priceFunction)
