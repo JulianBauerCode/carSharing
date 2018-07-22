@@ -24,7 +24,7 @@
 
 # Usage
 
-## Start processed
+## Start creating bills by executing the script
     - Start a terminal / ipython-console / spyder
     - Navigate to the cloned directory (path, where the script '00_carSharingBills.py' is located)
     - Execute the script '00_carSharingBills.py'
@@ -40,7 +40,7 @@
 
 *Spyder*
 
-![alt text](https://raw.githubusercontent.com/JulianBauerCode/pictures/master/carSharing/complete.png)
+![alt text](https://raw.githubusercontent.com/JulianBauerCode/pictures/master/carSharing/spyder.png)
 
 ## Do this each month
 
@@ -62,13 +62,18 @@ Open the file 00_carSharingBills.py and insert the month and year of the month y
 
 ![alt text](https://raw.githubusercontent.com/JulianBauerCode/pictures/master/carSharing/changeMonth.png)
 
-Users, experienced in scripting, may adjust this script further:
+Users, experienced in scripting, may adjust this script:
 
 ![alt text](https://raw.githubusercontent.com/JulianBauerCode/pictures/master/carSharing/advanced.png)
+
+#### Execute the script again
+
+See above.
 
 ## Do the following once
 
 You can specify
+
     - the layout of the bills
     - the signature inserted into the bills
     - the layout of the overview pdf
