@@ -51,8 +51,10 @@ Insert new data using Excel or LibreOffice-Calc.
 
 #### Update logbook
 Insert new data using Excel or LibreOffice-Calc.
-You decide wheter you like to keep different files for different months or combine all the data in one single large Excel-file.
+You decide whether you like to keep different files for different months or combine all the data in one single large Excel-file.
 Python reads the complete file and filters the data in order to process the specified month.
+A ride belongs to a specfified month, if the ride starts during this month.
+This, for example,  means that all rides belonging to June start during June but may end in July.
 
 ![alt text](https://raw.githubusercontent.com/JulianBauerCode/pictures/master/carSharing/logbook.png)
 
