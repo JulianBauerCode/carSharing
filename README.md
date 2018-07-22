@@ -51,6 +51,8 @@ Insert new data using Excel or LibreOffice-Calc.
 
 #### Update logbook
 Insert new data using Excel or LibreOffice-Calc.
+You decide wheter you like to keep different files for different months or combine all the data in one single large Excel-file.
+Python reads the complete file and filters the data to only process the data of the specified month.
 
 ![alt text](https://raw.githubusercontent.com/JulianBauerCode/pictures/master/carSharing/logbook.png)
 
@@ -108,6 +110,9 @@ Example:
 #### Change the signature
 
 Use your own one only.
+Save a picture of your signature here:
+
+*templates/signature.png*
 
 #### Change template of overview pdf
 
@@ -122,7 +127,7 @@ Example:
 
 #### Change dictionary / language
 
-Python formats the calculated data into tables and passes these table to the latex-templates.
+Python formats the calculated data into tables and passes these tables to the latex-templates.
 You can specify the labels of these tables by manipulating the content of the file dictionary.xlsx.
 
 ![alt text](https://raw.githubusercontent.com/JulianBauerCode/pictures/master/carSharing/dictionary.png)
