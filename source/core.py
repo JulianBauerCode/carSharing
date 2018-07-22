@@ -29,6 +29,10 @@ class LatexTemplate(string.Template):
     """String template with special delimiter"""
     delimiter = "##"
 
+class ProcessingProblem(Exception):
+    """Something went wrong:"""
+    pass
+
 
 class cd:
     """Context manager for changing the current working directory"""
@@ -122,13 +126,20 @@ class BillManager():
                                                  dateOfBill=dateOfBill)
         self.pathLogbook = pathLogbook
         self.pathTableOfDrivers = pathTableOfDrivers
-        self.priceFunction = priceFunction
         self.dirOutput = dirOutput
         self.pathMain = os.path.dirname(os.path.abspath('__file__'))
         self.pathDictionary = os.path.join(
                                 self.pathMain,
                                 'templates',
                                 'dictionary.xlsx')
+        self.priceFunction = priceFunction
+        self.keepTexFiles = False
+
+        # Print to user
+        self.printStart('Input data')
+        for word in ['year', 'month', 'dateOfBill','pathTableOfDrivers',
+                     'pathLogbook','pathMain',]:
+            print('{}={}'.format(word, eval('self.'+word)))
 
     def createBills(self):
 
@@ -184,6 +195,13 @@ class BillManager():
             .reset_index()
 
         ##################
+        # Check if logbookF is empty
+        if self.logbookF.empty:
+            raise ProcessingProblem(
+                'There is no data between \n{} and \n{}'.format(
+                    self.start, self.end))
+
+        ##################
         # Calc duration
 
         self.logbookF['duration'] = self.logbookF.apply(
@@ -215,6 +233,9 @@ class BillManager():
         # Create list of active drivers
 
         self.activeDrivers = self.totalPrice.index.tolist()
+
+        self.printStart('Active drivers')
+        print(self.activeDrivers)
 
         ##################
         # Check if all active driver are in table of drivers
@@ -281,6 +302,8 @@ class BillManager():
         # Define unnecessary file endings which will be deleted
 
         self.unnecessaryFileEndings = ['.aux', '.log']
+        if not self.keepTexFiles:
+            self.unnecessaryFileEndings.append('.tex')
 
         ##################
         # Process overview
@@ -342,6 +365,7 @@ class BillManager():
                            latexDict=self.driverDicts[driver],
                            unnecessaryFileEndings=
                               self.unnecessaryFileEndings)
+        print('###  Finished  ###')
 
     def plotPriceFunction(self,
                           rangeDistance=[0, 120],
@@ -446,4 +470,8 @@ class BillManager():
                 [dictionary[name] for name in dataFrame.index.names],
                 inplace=True)
         return dataFrame
+
+    def printStart(self, word):
+        print('###########################\n# {}:'.format(word))
+        return None
 

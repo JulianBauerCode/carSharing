@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Thu May 17 18:58:13 2018
-
-@author: me
-"""
 
 ##################
 # Import main code
 import sys
+import os
 sys.path.append(os.path.join(os.getcwd(), 'source'))
 import core
 
