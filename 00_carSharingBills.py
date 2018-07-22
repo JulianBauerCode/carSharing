@@ -6,37 +6,62 @@ Created on Thu May 17 18:58:13 2018
 @author: me
 """
 
-import pandas as pd
-import os
-import datetime
-import dateutil
-import string
-import subprocess
-import locale
-
+##################
+# Import main code
 import sys
 sys.path.append(os.path.join(os.getcwd(), 'source'))
 import core
 
-if (__name__ == '__main__'):
-    pathMain = os.path.dirname(os.path.abspath('__file__'))
-    pathLogbook = os.path.join(
-            pathMain,
-            '02_logbook.xlsx')
-    pathTableOfDrivers = os.path.join(
-            pathMain,
-            '01_tableOfDrivers.xlsx')
-    dirOutput = os.path.join(pathMain, 'output')
+################## ################## ##################
+# Start user input
 
-    m = core.BillManager(
-                    year=2001,
-                    month=1,
-                    autoDate=True,
-                    dateOfBill=None,
-                    pathTableOfDrivers=pathTableOfDrivers,
-                    pathLogbook=pathLogbook,
-                    dirOutput=dirOutput
-                    )
-    m.createBills()
+# Please insert the month and year of the month which should be processed
+month = 1
+year = 2001
 
-    m.plotPriceFunction()
+##################
+# Optional input:
+
+# Please insert paths to 
+#   01_tableOfDrivers.xlsx
+#   02_lobook.xlsx
+#   output-directory
+# You can use relative paths starting at the directory where this script is located (pathMain)
+
+# Path to directory of this script
+pathMain = os.path.dirname(os.path.abspath('__file__'))
+
+# Path to 01_tableOfDrivers.xlsx
+pathLogbook = os.path.join(
+        pathMain,
+        '02_logbook.xlsx')
+
+# Path to 02_lobook.xlsx
+pathTableOfDrivers = os.path.join(
+        pathMain,
+        '01_tableOfDrivers.xlsx')
+
+# Path to output-directory
+dirOutput = os.path.join(
+        pathMain,
+        'output')
+
+# End user input
+################## ################## ##################
+
+##################
+# Call main code
+
+m = core.BillManager(
+                year=year,
+                month=month,
+                autoDate=True,
+                dateOfBill=None,
+                pathTableOfDrivers=pathTableOfDrivers,
+                pathLogbook=pathLogbook,
+                dirOutput=dirOutput
+                )
+m.createBills()
+
+#Uncomment the follwoing line to print cost-function
+#m.plotPriceFunction()

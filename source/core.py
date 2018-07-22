@@ -106,10 +106,16 @@ def calculatePriceOfSingleRide(distance, duration):
 
 class BillManager():
     """Processes one single month"""
-    def __init__(self, year, month, pathLogbook, pathTableOfDrivers,
-                 dirOutput,
-                 priceFunction=calculatePriceOfSingleRide,
-                 autoDate=True, dateOfBill=None):
+    def __init__(self,
+                    year,
+                    month,
+                    pathTableOfDrivers,
+                    pathLogbook,
+                    dirOutput,
+                    priceFunction=calculatePriceOfSingleRide,
+                    autoDate=True,
+                    dateOfBill=None):
+
         self.year = year
         self.month = month
         self.dateOfBill = self.getBillDateGerman(autoDate=autoDate,
@@ -382,7 +388,7 @@ class BillManager():
                         'The local format of the bills date can\'t be'
                         'determined automatically.\n Please insert it'
                         'by Hand')
-        return dateOfBill
+        return str(dateOfBill)
 
     def createPdf(self, dirOutput, nameLatexFile, template, latexDict,
                   unnecessaryFileEndings):
