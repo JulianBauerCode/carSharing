@@ -107,7 +107,6 @@ def calculatePriceOfSingleRide(distance, duration):
 class BillManager():
     """Processes one single month"""
     def __init__(self, year, month, pathLogbook, pathTableOfDrivers,
-                 pathDictionary,
                  dirOutput,
                  priceFunction=calculatePriceOfSingleRide,
                  autoDate=True, dateOfBill=None):
@@ -117,10 +116,13 @@ class BillManager():
                                                  dateOfBill=dateOfBill)
         self.pathLogbook = pathLogbook
         self.pathTableOfDrivers = pathTableOfDrivers
-        self.pathDictionary = pathDictionary
         self.priceFunction = priceFunction
         self.dirOutput = dirOutput
         self.pathMain = os.path.dirname(os.path.abspath('__file__'))
+        self.pathDictionary = os.path.join(
+                                self.pathMain,
+                                'templates',
+                                'dictionary.xlsx')
 
     def createBills(self):
 
@@ -312,8 +314,8 @@ class BillManager():
             driverDict['totalPrice'] = str(self.totalPrice[driver])\
                 + ' Euro'
             driverDict['pathSignature'] = os.path.relpath(
-                    path=os.path.join(pathMain, 'templates', 'signature'),
-                    start=dirOutput)
+                    path=os.path.join(self.pathMain, 'templates', 'signature'),
+                    start=self.dirOutput)
             for key in keys:
                 driverDict[key] = self.tableOfDrivers.loc[driver][key]
             # Add current dict to dict of dicts
@@ -336,7 +338,6 @@ class BillManager():
                               self.unnecessaryFileEndings)
 
     def plotPriceFunction(self,
-                          function,
                           rangeDistance=[0, 120],
                           durations=[23.99, 24, 24.01],
                           ylim=[0, 45]):
@@ -351,7 +352,7 @@ class BillManager():
         for plotNumber, duration in enumerate(durations):
             ax.set_title('Variable distance, different durations')
             x = np.arange(*rangeDistance)
-            y = list(map(lambda x: function(
+            y = list(map(lambda x: self.priceFunction(
                 distance=x,
                 duration=duration), x))
             ax.plot(x, y,
@@ -440,28 +441,3 @@ class BillManager():
                 inplace=True)
         return dataFrame
 
-
-if (__name__ == '__main__'):
-    pathMain = os.path.dirname(os.path.abspath('__file__'))
-    pathLogbook = os.path.join(pathMain, 'data', 'logbook.xlsx')
-    pathTableOfDrivers = os.path.join(
-            pathMain,
-            'data',
-            'tableOfDrivers.xlsx')
-    pathDictionary = os.path.join(
-            pathMain,
-            'data',
-            'dictionary.xlsx')
-    dirOutput = os.path.join(pathMain, 'output')
-
-    m = BillManager(year=2001,
-                    month=1,
-                    pathLogbook=pathLogbook,
-                    pathTableOfDrivers=pathTableOfDrivers,
-                    pathDictionary=pathDictionary,
-                    dirOutput=dirOutput,
-                    priceFunction=calculatePriceOfSingleRide,
-                    autoDate=True, dateOfBill=None)
-    m.createBills()
-
-    m.plotPriceFunction(function=m.priceFunction)
