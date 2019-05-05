@@ -15,6 +15,8 @@ import core
 month = 1
 year = 2001
 
+dateOfBill = u'4. Mai 2018'
+
 ##################
 # Optional input:
 
@@ -51,8 +53,8 @@ dirOutput = os.path.join(
 m = core.BillManager(
                 year=year,
                 month=month,
-                autoDate=True,
-                dateOfBill=None,
+                autoDate=False,
+                dateOfBill=dateOfBill,
                 pathTableOfDrivers=pathTableOfDrivers,
                 pathLogbook=pathLogbook,
                 dirOutput=dirOutput
