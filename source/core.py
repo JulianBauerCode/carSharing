@@ -163,14 +163,14 @@ class BillManager():
 
         self.logbook['start'] = self.logbook.apply(
                             func=lambda row:
-                            pd.datetime.combine(
+                            datetime.datetime.combine(
                                 row['dateStart'],
                                 row['timeStart']),
                             axis=1)
 
         self.logbook['end'] = self.logbook.apply(
                             func=lambda row:
-                            pd.datetime.combine(
+                            datetime.datetime.combine(
                                 row['dateEnd'],
                                 row['timeEnd']),
                             axis=1)
