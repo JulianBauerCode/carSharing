@@ -345,8 +345,12 @@ class BillManager():
             driverDict['totalPrice'] = str(self.totalPrice[driver])\
                 + ' Euro'
             driverDict['pathSignature'] = os.path.relpath(
-                    path=os.path.join(self.pathMain, 'templates', 'signature'),
-                    start=self.dirOutput)
+                    path=os.path.join(
+                                self.pathMain,
+                                'templates',
+                                'signature',
+                                ),
+                    start=self.dirOutput).replace('\\', "/") # Tex on Windows requires foward slash /
             for key in keys:
                 driverDict[key] = self.tableOfDrivers.loc[driver][key]
             # Add current dict to dict of dicts
