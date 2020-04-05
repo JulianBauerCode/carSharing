@@ -404,7 +404,7 @@ class BillManager():
                         "%-d. %B %Y")
             elif os.name == 'nt':  # We are on Windows
                 locale.setlocale(locale.LC_ALL, 'deu_deu')
-                dateOfBill = datetime.now().strftime("%#d. %B %Y")
+                dateOfBill = datetime.datetime.now().strftime("%#d. %B %Y")
             else:
                 raise UnSupportedOperatingSystem(
                         'The operating system is neither \'posix = Linux\''
