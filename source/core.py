@@ -118,7 +118,9 @@ class BillManager():
                     dirOutput,
                     priceFunction=calculatePriceOfSingleRide,
                     autoDate=True,
-                    dateOfBill=None):
+                    dateOfBill=None,
+                    keepTexFiles=False,
+                    ):
 
         self.year = year
         self.month = month
@@ -133,7 +135,7 @@ class BillManager():
                                 'templates',
                                 'dictionary.xlsx')
         self.priceFunction = priceFunction
-        self.keepTexFiles = False
+        self.keepTexFiles = keepTexFiles
 
         # Print to user
         self.printStart('Input data')

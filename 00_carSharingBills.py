@@ -55,7 +55,8 @@ m = core.BillManager(
                 dateOfBill=None,
                 pathTableOfDrivers=pathTableOfDrivers,
                 pathLogbook=pathLogbook,
-                dirOutput=dirOutput
+                dirOutput=dirOutput,
+                keepTexFiles=True,
                 )
 m.createBills()
 
