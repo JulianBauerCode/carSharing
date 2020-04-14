@@ -7,6 +7,7 @@ Created on Thu May 17 18:58:13 2018
 """
 
 import pandas as pd
+import numpy as np
 import os
 import datetime
 import dateutil
@@ -262,6 +263,9 @@ class BillManager():
                         self.totalDistance,
                         self.totalDuration,
                         self.totalPrice]).T
+                        
+        d = self.summation
+        d.loc['Alle Fahrer'] = np.sum(d)
 
         ##################
         # Change format of datetimes
