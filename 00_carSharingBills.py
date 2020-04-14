@@ -12,7 +12,7 @@ import core
 # Start user input
 
 # Please insert the month and year of the month which should be processed
-month = 1
+month = 3
 year = 2001
 
 ##################

@@ -350,12 +350,12 @@ class BillManager():
                                 'templates',
                                 'signature',
                                 ),
-                    start=self.dirOutput).replace('\\', "/") # Tex on Windows requires foward slash /
+                    start=self.dirOutput).replace('\\', "/") # Tex on Windows requires forward slash /
             for key in keys:
                 driverDict[key] = self.tableOfDrivers.loc[driver][key]
             # Add current dict to dict of dicts
             self.driverDicts[driver] = driverDict
-
+        
         # Excute
         for driver in self.activeDrivers:
             self.createPdf(dirOutput=self.dirOutput,
@@ -447,9 +447,9 @@ class BillManager():
 
     def monthGerman(self, integerMonth):
         """Return German name of month"""
-        gerMonthsNamesList = ['Januar', 'Februar', 'März', 'April',
-                              'Mai', 'Juni', 'Juli', 'August', 'September',
-                              'Oktober', 'November', 'Dezember']
+        gerMonthsNamesList = [u'Januar', u'Februar', u'M\\"{a}rz', u'April',
+                              u'Mai', u'Juni', u'Juli', u'August', u'September',
+                              u'Oktober', u'November', u'Dezember']
         if (1 <= integerMonth) & (integerMonth <= 12):
             month = gerMonthsNamesList[integerMonth-1]
         else:
