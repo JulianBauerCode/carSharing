@@ -32,25 +32,25 @@
 \setkomavar{frombank}{name of Bobs bank\\ number of Bobs bank \\ Bobs bank account}
 
 \setkomavar{firstfoot}{%<- changed
-    \parbox[t]{\textwidth}{\footnotesize 
+    \parbox[t]{\textwidth}{\footnotesize
 \begingroup \raggedleft
 Seite \thepage{} von \pageref{LastPage}\\
 \endgroup
     \begin{tabular}[t]{l@{}}
-         \multicolumn{1}{@{}l@{}}{Verein:}\\ 
+         \multicolumn{1}{@{}l@{}}{Verein:}\\
          Car Sharing XY e.V.
     \end{tabular}
      \hfill{}
      \begin{tabular}[t]{l@{}}
-         \multicolumn{1}{@{}l@{}}{Rechtliche Informationen:}\\ 
+         \multicolumn{1}{@{}l@{}}{Rechtliche Informationen:}\\
         Amtsgericht Bob\\
         Registerblatt Bob\\
      \end{tabular}
      \hfill{}
      \begin{tabular}[t]{l@{}}
-         \multicolumn{1}{@{}l@{}}{\usekomavar*{frombank}:}\\ 
-         \usekomavar{frombank} 
-     \end{tabular} 
+         \multicolumn{1}{@{}l@{}}{\usekomavar*{frombank}:}\\
+         \usekomavar{frombank}
+     \end{tabular}
  }}
 
 \pagestyle{headings}
@@ -64,7 +64,7 @@ Seite \thepage{} von \pageref{LastPage}\\
 
 %\setkomavar{nextfoot}{\usekomavar{firstfoot}}
 \setkomavar{nextfoot}{%
-    \parbox[t]{\textwidth}{\footnotesize 
+    \parbox[t]{\textwidth}{\footnotesize
         \begingroup \raggedleft
             Seite \thepage{} von \pageref{LastPage}\\
         \endgroup
@@ -82,7 +82,7 @@ Seite \thepage{} von \pageref{LastPage}\\
 
 \begin{document}
 
-\begin{letter}{ ##firstName ##lastName \\ ##street ##streetNumber\\ ##postCode ##city } 
+\begin{letter}{ ##firstName ##lastName \\ ##street ##streetNumber\\ ##postCode ##city }
 
 \opening{Moin,}
 
@@ -92,7 +92,7 @@ Dabei ist ein Aufwand von insgesamt ##totalPrice entstanden, welcher von Ihrem K
 
 \closing{Mit freundlichen Grüßen}
 
-%\setkomavar*{enclseparator}{Anlage} 
+%\setkomavar*{enclseparator}{Anlage}
 %\encl{Fahrtenauflistung}
 
 

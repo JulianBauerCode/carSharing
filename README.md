@@ -1,6 +1,6 @@
 # Installation
 ## Linux
-    - Install Latex 
+    - Install Latex
         - sudo apt-get install texlive texlive-lang-german texlive-doc-de texlive-latex-extra
     - Install Python3.6
         - sudo apt-get install python3.6
