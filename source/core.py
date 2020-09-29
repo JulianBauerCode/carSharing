@@ -346,7 +346,7 @@ class BillManager:
             driverDict["year"] = str(self.year)
             driverDict["table"] = self.overviewR.loc[driver, :].to_latex()
             driverDict["totalPrice"] = (
-                str(self.totalPrice[driver]).replace(".", ",") + " Euro"
+                "{:.2f}".format(self.totalPrice[driver]).replace(".", ",") + " Euro"
             )
             driverDict["pathSignature"] = os.path.relpath(
                 path=os.path.join(self.pathMain, "templates", "signature",),
